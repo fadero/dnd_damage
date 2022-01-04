@@ -1,9 +1,12 @@
 import numpy as np  #so we can simulate many things in parallel
-import matplotlib as plt    #so we can save simulations as figures
+import matplotlib.pyplot as plt    #so we can save simulations as figures
+import time     #so we can report the time it takes to run the code
+
+start = time.time()
 
 def damage(adv='0', atk_bonus=0, crit=20, lucky=0, atk_die='0d0', arm_class=10,
     dmg_die0='1d8', dmg_bonus=0,  GWM=0, GWF=0, brutal=0, vicious=0, dmg_die1=0,
-    dmg_die2=0, n_atks=1e5):
+    dmg_die2=0, n_atks=1e5, progress=0):
     """'Damage output' a floating point number.
 
     INPUTS
@@ -22,6 +25,7 @@ def damage(adv='0', atk_bonus=0, crit=20, lucky=0, atk_die='0d0', arm_class=10,
     'dmg_die1'  string of second damage di(c)e to be rolled on hit
     'dmg_die2'  string of third damage di(c)e to be rolled on a hit
     'n_atks'    whole number of attacks to be simulated
+    'progress'  logical value for whether to print progress bar to command line
 
     OUTPUTS
     'damage'    float number representing average expected damage per attack"""
@@ -63,7 +67,10 @@ def damage(adv='0', atk_bonus=0, crit=20, lucky=0, atk_die='0d0', arm_class=10,
         adv_str = 'advantage'
     elif adv == 'adv+':
         adv_str = 'superior advantage'
-    print("Simulating %i attack rolls at %s..."%(n_atks, adv_str), end='')
+
+    if progress == 1:    
+        print("Simulating %i attack rolls at %s against AC %i..."
+              %(n_atks, adv_str, arm_class), end='')
     
     for atk in range(n_atks):   #simulate many attacks
         rolls = np.zeros((n_dmg_dice0+brutal+n_dmg_dice1+n_dmg_dice2, 1))
@@ -173,15 +180,69 @@ def damage(adv='0', atk_bonus=0, crit=20, lucky=0, atk_die='0d0', arm_class=10,
         
         results[atk, 0] = dmg   #record damage
         
-        if (atk/1000).is_integer():
-            print('.', end='', sep='') #print a period for every 100 attacks
+        if (atk/(n_atks/10)).is_integer() and progress == 1:
+            print('.', end='', sep='') #print a period for every 1/10 of n_atks
         
     avg_dmg = np.mean(results[:,0]) #take the arithmetic mean over all attacks
-    print('Done.')
+
+    if progress == 1:
+        print(' Done.')
     return avg_dmg  #pass the average damage back to the user
 
-output = damage(adv='0', atk_bonus=0, crit=20, lucky=0, atk_die='0d0',
-                arm_class=10, dmg_die0='1d8', dmg_bonus=0,  GWM=0, GWF=0,
-                brutal=0, vicious=0, dmg_die1=0, dmg_die2=0, n_atks=1e5)
+##Below is an example of multiple calls of the damage function for the purpose
+##of plotting damage as a function of armor class
 
-print("Average damage is %f"%(output), end='')
+arm_class_min = 10
+arm_class_max = 25
+
+arm_class = list(range(arm_class_min, arm_class_max+1))  #range of ACs to test
+
+avg_dmg_plt = np.zeros((arm_class_max-arm_class_min+1, 3, 2)) #AC, adv, atk type
+
+def make_a_figure(avg_dmg_plt, num=0, arm_class_min=10, arm_class_max=25,
+                  title='', adv_idx=0,  #define inputs for making figs
+                  legend=['attack0', 'attack1', 'attack2', 'attack3']):
+    fig = plt.figure(num=num)   #change the figure number to match the adv
+    for atk_idx in range(len(avg_dmg_plt[0, 0, :])):    #plot for all atk types
+        plt.plot(arm_class, avg_dmg_plt[:, adv_idx, atk_idx],
+                 label=legend[atk_idx])
+    plt.legend()    #include a legend, defined by the label arg in plt.plot
+    plt.grid('on')  #turn the grid on
+    plt.xlim(arm_class_min, arm_class_max)  #set x limits to match ACs tested
+    plt.ylim(avg_dmg_plt[:, adv_idx, :].min(), avg_dmg_plt[:, adv_idx, :].max())
+    plt.xlabel("target armor class")    #^set y limits to match damage output
+    plt.ylabel("average damage per attack")
+    plt.title(title)
+
+print("Simulating %i sets of attack rolls..."%(avg_dmg_plt.size), end='')
+
+for adv_idx in range(len(avg_dmg_plt[0, :, 0])):    #for all advantages
+    for arm_class_idx in range(arm_class_min, arm_class_max+1): #for all ACs
+        for atk_idx in range(len(avg_dmg_plt[0, 0, :])):    #for all atk types
+
+            #define title strings and advantage strings
+            if adv_idx == 0:
+                adv = '0'
+                title = 'no advantage'
+            elif adv_idx == 1:
+                adv = 'adv'
+                title = 'advantage'
+            elif adv_idx == 2:
+                adv = 'disadv'
+                title = 'disadvantage'
+
+            #run the damage calculation
+            avg_dmg_plt[arm_class_idx-arm_class_min, adv_idx, atk_idx] = damage(
+                adv=adv, atk_bonus=14, crit=18, arm_class=arm_class_idx,
+                dmg_die0='2d6', dmg_bonus=6, GWM=atk_idx, GWF=1, brutal=1,
+                n_atks=1e5, progress=0)
+        print('.', end='', sep='') #print a period for every AC finished
+
+    #make a figure for each advantage type, plot all attack types on each figure
+    make_a_figure(avg_dmg_plt, num=adv_idx, arm_class_min=10, arm_class_max=25,
+        title=title, adv_idx=adv_idx,legend=['greatsword', 'greatsword+GWM'])
+
+end = time.time()
+print(' Done.\n')
+print("Elapsed time is %i seconds."%(end-start), end='')
+plt.show()  #show all the figures once the calculations are done
