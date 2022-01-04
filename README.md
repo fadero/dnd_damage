@@ -4,6 +4,10 @@ Python3 code to simulate average expected damage output per attack in D&amp;D 5e
 DESCRIPTION
 This code takes various string and integer inputs from the user for simulating an arbitrary number of attacks in D&D 5e. This code is mainly useful for determining the average damage that an attack will deal to a creature with a user-defined armor class. 
 
+DEPENDENCIES
+numpy: https://numpy.org
+matplotlib: https://matplotlib.org
+
 ASSUMPTIONS
 This code uses a home-brew rule for critical hits, which is as follows: 
 
@@ -48,6 +52,8 @@ dmg_die1 - The string for an additional type of damage di(c)e rolled on a hit. (
 dmg_die2 - The string for an additional type of damage di(c)e rolled on a hit. (e.g. the hex spell '1d6') Note: extra damage dice are not subject to the brutal input argument. (default: 0)
 
 n_atks - Whole number of attacks to be simulated (default: 1e5)
+
+progress – The logical value for if progress reports on the code are to be printed.
 
 NOTES
 - For damage subject to the Elemental Adept feat (i.e. all 1s on damage dice are considered 2s), I recommend adding the expected increase in damage to dmg_bonus. Example: 1d4 gives an average of 2.5 (1+2+3+4)/4. 1d4 (1s become 2s) gives an average of 2.75 (2+2+3+4)/4. The difference in average is 0.25 because rolling a 1 has a 1-in-4 chance of occuring, so the average roll experiences a bonus of 0.25. From a statistical average viewpoint, 1d4 (1s become 2s) is equivalent to 1d4+0.25. This is a bit more math on the user up-front, but the alternative is adding in input arguments for which of the damage dice are subject to Elemental Adept, which makes the code a lot messier. This edge-case is not frequent enough to justify additional input args. 
