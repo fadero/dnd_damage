@@ -33,27 +33,27 @@ INPUTS
 
 'atk_die' - A string for the di(c)e to be added as a bonus to the attack roll (e.g. '1d4' for the bless spell) (default: '0d0')
 
-arm_class - The integer armor class of the attack's target. (default: 10)
+'arm_class' - The integer armor class of the attack's target. (default: 10)
 
-dmg_die0 - The string for the default damage di(c)e rolled on a hit (e.g., '1d4', '2d6') (default: '1d8')
+'dmg_die0' - The string for the default damage di(c)e rolled on a hit (e.g., '1d4', '2d6') (default: '1d8')
 
-dmg_bonus - The integer bonus to the damage done on a hit (default: 0)
+'dmg_bonus' - The integer bonus to the damage done on a hit (default: 0)
 
-GWM - The logical value for if the Great Weapon Master feat is used in the attack. (default: 0)
+'GWM' - The logical value for if the Great Weapon Master feat is used in the attack. (default: 0)
 
-GWF - The logical value for if the Great Weapon Fighting fighting style is used. (default: 0)
+'GWF' - The logical value for if the Great Weapon Fighting fighting style is used. (default: 0)
 
-brutal - The integer value for the extra number of damage dice rolled on a critical hit (e.g. Barbarian's Brutal Critical, the Piercer feat) (default: 0)
+'brutal' - The integer value for the extra number of damage dice rolled on a critical hit (e.g. Barbarian's Brutal Critical, the Piercer feat) (default: 0)
 
-vicious - The integer value for the damage bonus added on a natural 20 attack roll (e.g. Vicious weapons) (default: 0)
+'vicious' - The integer value for the damage bonus added on a natural 20 attack roll (e.g. Vicious weapons) (default: 0)
 
-dmg_die1 - The string for an additional type of damage di(c)e rolled on a hit. (e.g. Paladin's Divine Smite '1d8'). Note: extra damage dice are not subject to the brutal input argument. (default: 0)
+'dmg_die1' - The string for an additional type of damage di(c)e rolled on a hit. (e.g. Paladin's Divine Smite '1d8'). Note: extra damage dice are not subject to the brutal input argument. (default: 0)
 
-dmg_die2 - The string for an additional type of damage di(c)e rolled on a hit. (e.g. the hex spell '1d6') Note: extra damage dice are not subject to the brutal input argument. (default: 0)
+'dmg_die2' - The string for an additional type of damage di(c)e rolled on a hit. (e.g. the hex spell '1d6') Note: extra damage dice are not subject to the brutal input argument. (default: 0)
 
-n_atks - Whole number of attacks to be simulated (default: 1e5)
+'n_atks' - Whole number of attacks to be simulated (default: 1e5)
 
-progress – The logical value for if progress reports on the code are to be printed.
+'progress' – The logical value for if progress reports on the code are to be printed.
 
 NOTES
 - For damage subject to the Elemental Adept feat (i.e. all 1s on damage dice are considered 2s), I recommend adding the expected increase in damage to dmg_bonus. Example: 1d4 gives an average of 2.5 (1+2+3+4)/4. 1d4 (1s become 2s) gives an average of 2.75 (2+2+3+4)/4. The difference in average is 0.25 because rolling a 1 has a 1-in-4 chance of occuring, so the average roll experiences a bonus of 0.25. From a statistical average viewpoint, 1d4 (1s become 2s) is equivalent to 1d4+0.25. This is a bit more math on the user up-front, but the alternative is adding in input arguments for which of the damage dice are subject to Elemental Adept, which makes the code a lot messier. This edge-case is not frequent enough to justify additional input args. 
