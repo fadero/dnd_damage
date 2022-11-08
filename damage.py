@@ -1,8 +1,7 @@
-import numpy as np  #so we can simulate many things in parallel
-import matplotlib.pyplot as plt    #so we can save simulations as figures
-import time     #so we can report the time it takes to run the code
-
-start = time.time()
+from multiprocessing import Pool #so we can simulate many things in parallel
+import numpy as np              #so we can treat arrays as matrices
+import matplotlib.pyplot as plt #so we can save simulations as figures
+import time                     #so we can report the time it takes to run the code
 
 def damage(adv='0', atk_bonus=0, crit=20, lucky=0, atk_die='0d0', arm_class=10,
     dmg_die0='1d8', dmg_bonus=0,  GWM=0, GWF=0, brutal=0, vicious=0, dmg_die1=0,
@@ -189,60 +188,143 @@ def damage(adv='0', atk_bonus=0, crit=20, lucky=0, atk_die='0d0', arm_class=10,
         print(' Done.')
     return avg_dmg  #pass the average damage back to the user
 
-##Below is an example of multiple calls of the damage function for the purpose
-##of plotting damage as a function of armor class
+#################################################################################
+#example set of rolls for a paladin/warlock multiclass
 
-arm_class_min = 10
-arm_class_max = 25
+#user inputs
+arm_class_min = 10  #minumum armor class to simulate attacks against
+arm_class_max = 25  #maximum armor class to simulate attacks against
+n_adv_type    = 3   #range of advantages for simulated attacks
+n_atk_type    = 6   #number of different types of attacks to simulate
+n_processors  = 8   #number of processors for multithread processing
 
-arm_class = list(range(arm_class_min, arm_class_max+1))  #range of ACs to test
+###############################################################################
+arm_class = list(range(arm_class_min, arm_class_max+1)) #range of ACs to test
 
-avg_dmg_plt = np.zeros((arm_class_max-arm_class_min+1, 3, 2)) #AC, adv, atk type
+avg_dmg_plt = np.zeros((arm_class_max-arm_class_min+1, n_adv_type, n_atk_type))
+avg_dmg_temp = np.zeros((n_adv_type, n_atk_type))
+
+def damage_calculation(arm_class):
+    for adv_idx in range(n_adv_type):        #for all advantages
+
+        #define advantage strings
+        if adv_idx == 0:
+            adv = '0'
+        elif adv_idx == 1:
+            adv = 'adv'
+        elif adv_idx == 2:
+            adv = 'disadv'
+
+        for atk_idx in range(n_atk_type): #for all atk types
+
+            #define different params for each attack type
+            if   atk_idx == 0:     #longsword
+                atk_bonus = 8
+                crit =      20
+                atk_die =   '0d0'
+                dmg_die0 =  '1d8'
+                dmg_die1 =  '0d0'
+                dmg_die2 =  '0d0'
+                dmg_bonus = 7
+
+            elif atk_idx == 1:    #longsword, hexblade's curse
+                atk_bonus = 8
+                crit =      19
+                atk_die =   '0d0'
+                dmg_die0 =  '1d8'
+                dmg_die1 =  '0d0'
+                dmg_die2 =  '0d0'               
+                dmg_bonus = 10
+
+            elif atk_idx == 2:    #longsword, bless
+                atk_bonus = 8
+                crit =      20
+                atk_die =   '1d4'
+                dmg_die0 =  '1d8'
+                dmg_die1 =  '0d0'
+                dmg_die2 =  '0d0'
+                dmg_bonus = 7
+
+            elif atk_idx == 3:    #longsword, hex
+                atk_bonus = 8
+                crit =      20
+                atk_die =   '0d0'
+                dmg_die0 =  '1d8'
+                dmg_die1 =  '0d0'
+                dmg_die2 =  '1d6'
+                dmg_bonus = 7
+
+            elif atk_idx == 4:    #longsword, hexblade's curse, bless
+                atk_bonus = 8
+                crit =      19
+                atk_die =   '1d4'
+                dmg_die0 =  '1d8'
+                dmg_die1 =  '0d0'
+                dmg_die2 =  '0d0'               
+                dmg_bonus = 10
+
+            elif atk_idx == 5:    #longsword, hexblade's curse, hex
+                atk_bonus = 8
+                crit =      19
+                atk_die =   '0d0'
+                dmg_die0 =  '1d8'
+                dmg_die1 =  '0d0'
+                dmg_die2 =  '1d6'               
+                dmg_bonus = 10
+
+            #run the damage calculation
+            avg_dmg_temp[adv_idx, atk_idx] = damage(
+                adv=adv, atk_bonus=atk_bonus, crit=crit, atk_die=atk_die, 
+                arm_class=arm_class, dmg_die0=dmg_die0, dmg_die1=dmg_die1,
+                dmg_die2=dmg_die2, dmg_bonus=dmg_bonus, n_atks=3e5, progress=0)
+
+    return avg_dmg_temp
+
+start = time.time()
+print("Simulating %i sets of attack rolls..."%(avg_dmg_plt.size), end='')
+
+if __name__ == '__main__':
+    with Pool(n_processors) as p:
+        avg_dmg_plt[0:arm_class_max-arm_class_min+1] = p.map(
+            damage_calculation, arm_class)
 
 def make_a_figure(avg_dmg_plt, num=0, arm_class_min=10, arm_class_max=25,
                   title='', adv_idx=0,  #define inputs for making figs
                   legend=['attack0', 'attack1', 'attack2', 'attack3']):
     fig = plt.figure(num=num)   #change the figure number to match the adv
-    for atk_idx in range(len(avg_dmg_plt[0, 0, :])):    #plot for all atk types
+    for atk_idx in range(n_atk_type):    #plot for all atk types
         plt.plot(arm_class, avg_dmg_plt[:, adv_idx, atk_idx],
                  label=legend[atk_idx])
     plt.legend()    #include a legend, defined by the label arg in plt.plot
     plt.grid('on')  #turn the grid on
     plt.xlim(arm_class_min, arm_class_max)  #set x limits to match ACs tested
-    plt.ylim(avg_dmg_plt[:, adv_idx, :].min(), avg_dmg_plt[:, adv_idx, :].max())
+    plt.ylim(max(avg_dmg_plt[:, adv_idx, :].min()-1, 0),
+                 avg_dmg_plt[:, adv_idx, :].max()+1)
     plt.xlabel("target armor class")    #^set y limits to match damage output
     plt.ylabel("average damage per attack")
     plt.title(title)
+    plt.savefig(fname=str(adv_idx) + '_' + title, dpi=600)
 
-print("Simulating %i sets of attack rolls..."%(avg_dmg_plt.size), end='')
+#make a figure for each advantage type, plot all attack types on each figure
+for adv_idx in range(n_adv_type):        #for all advantages
 
-for adv_idx in range(len(avg_dmg_plt[0, :, 0])):    #for all advantages
-    for arm_class_idx in range(arm_class_min, arm_class_max+1): #for all ACs
-        for atk_idx in range(len(avg_dmg_plt[0, 0, :])):    #for all atk types
-
-            #define title strings and advantage strings
-            if adv_idx == 0:
-                adv = '0'
-                title = 'no advantage'
-            elif adv_idx == 1:
-                adv = 'adv'
-                title = 'advantage'
-            elif adv_idx == 2:
-                adv = 'disadv'
-                title = 'disadvantage'
-
-            #run the damage calculation
-            avg_dmg_plt[arm_class_idx-arm_class_min, adv_idx, atk_idx] = damage(
-                adv=adv, atk_bonus=14, crit=18, arm_class=arm_class_idx,
-                dmg_die0='2d6', dmg_bonus=6, GWM=atk_idx, GWF=1, brutal=1,
-                n_atks=1e5, progress=0)
-        print('.', end='', sep='') #print a period for every AC finished
+    #define title strings
+    if   adv_idx == 0:
+        title = 'no advantage'
+    elif adv_idx == 1:
+        title = 'advantage'
+    elif adv_idx == 2:
+        title = 'disadvantage'
 
     #make a figure for each advantage type, plot all attack types on each figure
-    make_a_figure(avg_dmg_plt, num=adv_idx, arm_class_min=10, arm_class_max=25,
-        title=title, adv_idx=adv_idx,legend=['greatsword', 'greatsword+GWM'])
+    make_a_figure(avg_dmg_plt, num=adv_idx, arm_class_min=arm_class_min,
+                  arm_class_max=arm_class_max, title=title, adv_idx=adv_idx,
+                  legend=['Longsword', 'LS, Hexblade\'s Curse',
+                          'LS, Bless', 'LS, Hex', 'LS, HC, Bless',
+                          'LS, HC, Hex'])
+
+    print('.', sep='', end='')
 
 end = time.time()
 print(' Done.\n')
 print("Elapsed time is %i seconds."%(end-start), end='')
-plt.show()  #show all the figures once the calculations are done
