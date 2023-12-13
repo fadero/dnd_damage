@@ -7,6 +7,8 @@ This code takes various string and integer inputs from the user for simulating a
 DEPENDENCIES
 numpy: https://numpy.org
 matplotlib: https://matplotlib.org
+multiprocessing: https://docs.python.org/3/library/multiprocessing.html
+time: https://docs.python.org/3/library/time.html
 
 ASSUMPTIONS
 This code uses a home-brew rule for critical hits, which is as follows: 
